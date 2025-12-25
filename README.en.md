@@ -35,14 +35,20 @@ UCAgent is an automated hardware verification AI agent based on large language m
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/XS-MLVP/UCAgent.git
-cd UCAgent
+git clone git@github.com:yanfeng98/fork-UCAgent.git
+cd fork-UCAgent
 ```
 
 ### 2. Install Dependencies
 
 ```bash
-pip3 install -r requirements.txt
+# Install with uv (recommended)
+pip install uv -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/
+uv sync -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/
+source .venv/bin/activate
+
+# Install with pip
+pip install -r requirements.txt -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/
 ```
 
 ### 3. Clean Environment
