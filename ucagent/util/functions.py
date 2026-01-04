@@ -459,7 +459,8 @@ def get_toffee_json_test_case(workspace:str, item: dict) -> str:
     return ret
 
 
-def get_unity_chip_doc_marks(path: str, leaf_node:str, mini_leaf_count:int = 0) -> list:
+def get_unity_chip_doc_marks(path: str, leaf_node:str, mini_leaf_count:int = 0,
+                             error_char_list=["*", "?"]) -> list:
     """
     Get the Unity chip documentation marks from a file.
     :param path: Path to the file containing Unity chip documentation.
@@ -478,6 +479,17 @@ def get_unity_chip_doc_marks(path: str, leaf_node:str, mini_leaf_count:int = 0) 
     fmsg = ", ".join([f"{b[1]} at line {b[2]} need sub node '<{leaf_node}-*>'" for b in blist])
     assert len(blist) == 0, f"Incomplete label '<{leaf_node}-*>' detected: `{fmsg}`, delete the incomplete labels or fix it according to the format requirements: " + \
                             f"{' '.join([x+'*>' for x in prefix[:tindex+1]])}"
+    invalid_char_keys = []
+    finded_keys = set()
+    for k in klist:
+        for ec in error_char_list:
+            if ec in k:
+                invalid_char_keys.append(k)
+                finded_keys.add(k)
+    if len(invalid_char_keys) > 0:
+        invalid_char_keys = ", ".join(invalid_char_keys)
+        finded_keys = ", ".join(finded_keys)
+        raise ValueError(f"Invalid characters {finded_keys} found in keys: {invalid_char_keys}")
     return klist
 
 
@@ -1432,7 +1444,7 @@ def check_file_block(file_blocks, workspace, checker=None):
     return ret_map
 
 
-def description_mark_function_doc(func_list=[], workspace=None):
+def description_mark_function_doc(func_list=[], workspace=None, func_RunTestCases=None, timeout_RunTestCases=0):
     """
     Description for marking functions in test cases.
     """
@@ -1476,8 +1488,14 @@ def description_mark_function_doc(func_list=[], workspace=None):
         emsg = ""
         if len(er_mark_tc_list) > 0:
             tc_to_run = " ".join([func_test_cases[tc] for tc in er_mark_tc_list])
-            emsg += f"Test cases already called function 'mark_function' ({', '.join(er_mark_tc_list)}) but has errors, you need call tool RunTestCases('{tc_to_run}') " + \
-                "to get the detail errors to check if the names of 'function point', 'test case' and 'check point' are correct. "
+            tc_msg = f"Test cases ({', '.join(er_mark_tc_list)}) already called function 'mark_function' but has errors, you need call tool RunTestCases('{tc_to_run}') " + \
+                    "to get the detail errors to check if the names of 'function point', 'test case' and 'check point' are correct. "
+            if func_RunTestCases is not None:
+                warning(f"Running test RunTestCases('{tc_to_run}') to get detailed error messages...")
+                _, run_msg = func_RunTestCases(pytest_args=tc_to_run, timeout=timeout_RunTestCases, return_line_coverage=False, raw_return=True, detail=True)
+                tc_msg = f"Test cases ({', '.join(er_mark_tc_list)}) already called function 'mark_function' but has errors:\n STD_OUT:\n{run_msg['STDOUT']}\nSTD_ERR:\n{run_msg['STDERR']}\n" + \
+                         f"Note:\nIf you cannot find the root cause, you can call tool RunTestCases('{tc_to_run}') to get more detail information. "
+            emsg += tc_msg
         if len(no_mark_tc_list) > 0:
             emsg += f"Test cases not marked with 'mark_function': {', '.join(no_mark_tc_list)}. {simple_msg}"
         return emsg
