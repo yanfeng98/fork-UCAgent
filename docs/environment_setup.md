@@ -205,6 +205,25 @@ qwen **没有独立的模型配置文件**(`~/.qwen/settings.json` 只存放 MCP
 - 改模型只需改 `~/.bashrc` 的 `OPENAI_MODEL`,新开终端生效。
 - 排查 qwen 实际使用的模型: 终端 `env | grep OPENAI_MODEL`,或让 qwen 报错时看错误信息中的模型名(之前 404 报错即显示 `deepseek-v3-2-251201`)。
 
+### 5.6 测试示例选择(RTL 规模参考)
+
+`examples/` 下示例的 RTL 规模差异很大,按测试目的选择:
+
+| 示例 | 行数 | 适合场景 |
+|------|------|----------|
+| Adder | 16 | **首次测试流程**(快速验证全链路,推荐) |
+| Mux | 15 | 最简 |
+| ShiftRegister | 27 | 简单 |
+| FSM | 45 | 简单 |
+| ALU754 | 110 | 中等,验证质量/覆盖率效果 |
+| DualPort | 115 | 中等(双端口存储器) |
+| uart_16550 | 166 | 中等(经典 UART,多外围依赖) |
+| HPerfCounter | 285 | 较大(硬件性能计数器) |
+| IntegerDivider | 1024 | 大 |
+| Sbuffer | 20564 | 最大,极限压测(耗时与 API 消耗大) |
+
+选择建议: 首次测试用 Adder;验证质量用 ALU754 / uart_16550;压测用 Sbuffer。
+
 ## 6. 遗留事项
 
 - picker 的 `dut.cmake` 缺失、mem_direct 的 `WData`/`-llz4`、SWIG include 路径等问题应反馈给 XS-MLVP/picker 上游。
