@@ -139,7 +139,7 @@ make CFLAGS="-I$HOME/miniconda3/include" LIBRARY_PATH="$HOME/miniconda3/lib"
 
 ## 5. 使用与测试
 
-环境变量已固化到 `~/.ucagent_env`(README 推荐)和 `~/.bashrc`(PATH / LD_LIBRARY_PATH / OPENAI_*)。**新开终端生效**(当前已打开的终端需手动 `source ~/.ucagent_env`)。
+环境变量已固化到 `~/.ucagent_env`(README 推荐)和 `~/.bashrc`(PATH / LD_LIBRARY_PATH / OPENAI_*)。**新开终端生效**(当前已打开的终端需手动 `source ~/.ucagent_env`;**非交互 shell 不读 `~/.bashrc`**,如脚本/工具执行环境,需显式传入或 source)。
 
 > ⚠️ **注意**: README 的 `make mcp_Adder` 流程在此环境**不可直接用** — 其内部 `init_Adder` 步骤的 `example.py` 逻辑与新版 picker 工程结构不匹配会失败(见 §3.5)。workspace 生成后直接运行 ucagent 命令即可,无需走 make。
 
@@ -190,6 +190,20 @@ qwen 中输入任务提示词:
 cd output/workspace_Adder/Adder
 make CFLAGS="-I$HOME/miniconda3/include" LIBRARY_PATH="$HOME/miniconda3/lib"
 ```
+
+### 5.5 qwen 模型配置
+
+qwen **没有独立的模型配置文件**(`~/.qwen/settings.json` 只存放 MCP server 配置),模型通过环境变量读取:
+
+| 变量 | 值 | 说明 |
+|------|-----|------|
+| `OPENAI_BASE_URL` | `https://ark.cn-beijing.volces.com/api/v3` | 火山方舟 API 地址 |
+| `OPENAI_MODEL` | `deepseek-v4-flash-ga-260731` | 当前模型(§3.1 修复后) |
+| `OPENAI_API_KEY` | 方舟 key | 存于 `~/.bashrc` |
+| `OPENAI_API_BASE` | = `OPENAI_BASE_URL` | UCAgent `setting.yaml` 读取的变量 |
+
+- 改模型只需改 `~/.bashrc` 的 `OPENAI_MODEL`,新开终端生效。
+- 排查 qwen 实际使用的模型: 终端 `env | grep OPENAI_MODEL`,或让 qwen 报错时看错误信息中的模型名(之前 404 报错即显示 `deepseek-v3-2-251201`)。
 
 ## 6. 遗留事项
 
