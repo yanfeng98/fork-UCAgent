@@ -137,18 +137,54 @@ make CFLAGS="-I$HOME/miniconda3/include" LIBRARY_PATH="$HOME/miniconda3/lib"
 | DUT 运行 | `LD_LIBRARY_PATH=... python3 example.py` | ✅ exit 0 |
 | MCP server | `-hm` 模式启动 | ✅ `FastMCP server started at 127.0.0.1:5000` |
 
-## 5. 使用
+## 5. 使用与测试
 
-环境变量已固化到 `~/.ucagent_env`(README 推荐)和 `~/.bashrc`(PATH / LD_LIBRARY_PATH / OPENAI_*)。新开终端生效:
+环境变量已固化到 `~/.ucagent_env`(README 推荐)和 `~/.bashrc`(PATH / LD_LIBRARY_PATH / OPENAI_*)。**新开终端生效**(当前已打开的终端需手动 `source ~/.ucagent_env`)。
+
+> ⚠️ **注意**: README 的 `make mcp_Adder` 流程在此环境**不可直接用** — 其内部 `init_Adder` 步骤的 `example.py` 逻辑与新版 picker 工程结构不匹配会失败(见 §3.5)。workspace 生成后直接运行 ucagent 命令即可,无需走 make。
+
+### 5.1 自动测试(qwen 后端,推荐)
 
 ```bash
 source ~/.ucagent_env
-make mcp_Adder ARGS="--loop --backend=qwen"    # README 推荐方式
+cd ~/luyanfeng/fork-UCAgent
+
+python3 ucagent.py output/workspace_Adder/ Adder -s -hm --tui \
+  --mcp-server-no-file-tools --no-embed-tools --loop --backend=qwen
 ```
 
-手动方式: `make mcp_Adder` 启动 MCP server 后,在 `output/workspace_Adder/` 下运行 `qwen` 并输入任务提示词。
+- UCAgent 自动拉起 qwen,qwen 通过 MCP 驱动完整验证流程(分析 RTL → 写测试 → 跑测试 → 出报告)。
+- `--loop`: 完成后自动循环直到所有阶段完成;`ctrl+c` 中断进入交互,`status` 查看阶段进度。
+- 完整验证约 6 个阶段,耗时可能几十分钟,会消耗 API 额度;快速验证可只跑前几个阶段。
 
-构建 DUT 时若遇 lz4 报错:
+### 5.2 手动测试(了解 MCP 协同机制)
+
+终端 A(启动 UCAgent + MCP server):
+
+```bash
+source ~/.ucagent_env
+cd ~/luyanfeng/fork-UCAgent
+python3 ucagent.py output/workspace_Adder/ Adder -s -hm --tui \
+  --mcp-server-no-file-tools --no-embed-tools
+```
+
+终端 B(启动 qwen 连接 MCP):
+
+```bash
+cd output/workspace_Adder
+qwen
+```
+
+qwen 中输入任务提示词:
+
+> 请通过工具`RoleInfo`获取你的角色信息和基本指导,然后完成任务。请使用工具`ReadTextFile`读取文件。你需要在当前工作目录进行文件操作,不要超出该目录。
+
+### 5.3 测试结果
+
+- 报告输出在 `output/workspace_Adder/` 下(`uc_test_report/`、`Adder_test_summary.md` 等)。
+- TUI 快捷键: `ctrl+c` 中断命令进入交互,`q` 退出,`status` 查看状态,`help` 查看全部命令。
+
+### 5.4 构建 DUT 时 lz4 报错的解决
 
 ```bash
 cd output/workspace_Adder/Adder
